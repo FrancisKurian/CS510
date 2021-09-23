@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##Simple Scatter Plot with colors for each tree
+## Simple Scatter Plot with colors for each tree
 
 ```{r orange}
 data(Orange)
@@ -17,9 +17,7 @@ plot(Orange$age,Orange$circumference,xlab="Age (days)",ylab="Circumference (mm)"
 legend('topleft',sort(levels(Orange$Tree)),col=1:length(levels(Orange$Tree)),pch=19)
 ```
 
-##GGPLOT solution from:
-#https://lost-stats.github.io/Presentation/Figures/line_graphs.html
-
+## GGPLOT solution
 ```{r ggplot}
 library(ggplot2) 
 ggplot(Orange, aes(x = age, y = circumference, color = Tree)) +
@@ -27,7 +25,10 @@ ggplot(Orange, aes(x = age, y = circumference, color = Tree)) +
   labs(x = "Age (days)", y = "Circumference (mm)", title = "Orange Tree Circumference Growth by Age") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
-##Trials with viridis
+
+
+
+## Experimenting with viridis colors
 
 ```{r viridis}
 library(viridis)

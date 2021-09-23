@@ -25,4 +25,3 @@ tree.colors <- viridis(nlevels(Orange$Tree))
 plot(x=Orange$age,y=Orange$circumference, type ='l',col=Orange$Tree)
 legend('topleft',sort(levels(Orange$Tree)),col=1:length(levels(Orange$Tree)),pch=19)
 
-

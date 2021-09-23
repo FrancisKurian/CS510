@@ -1,2 +1,4 @@
 # CS510 Computing for Scientists
-# R programs|R Markdown
+- R Programs
+- R Markdown
+- Term projects 

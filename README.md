@@ -1,4 +1,4 @@
 # CS510 Computing for Scientists
-- R Programs
-- R Markdown
+- R Programs @ 'code' folder
+- R Markdown @ 'docs' folder
 - Term Projects 

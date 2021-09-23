@@ -1,2 +1,2 @@
-# CS510 Programming course in R
-# Code and document repository
+# CS510 Computing for Scientists
+# R programs|R Markdown

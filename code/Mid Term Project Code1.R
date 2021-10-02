@@ -1,21 +1,45 @@
 # Mid Term Project
 # Read CSV file from data folder using the company name
 # Do data exploration, apply data cleaning issues, do basic plots to understand
+# apply testing using the r functions
 
-df_stock <- read.csv(file='C:\\Users\\jeoku\\OneDrive\\Documents\\chapman\\CS510\\data\\kaggle_historic_stock_info.csv',header=TRUE)
-df_stock[2,]
+# getwd()
 
-myvec <- c(3:12)
-myvec
-mymat <- matrix(c(1:10),5,2)
-mymat
+ForexFile <- './data/FederalReserve_CurrencyXchangeRate.csv'
+
+BizSentimentIndexFile <- './data/Boeing.csv'
 
 
-if (any(myvec-1)>9)||matrix(myvec,2,5)[2,1]<=6{
-  
-}
+headers = read.csv(ForexFile, skip = 5 , header = F, nrows = 1)
+head(headers)
+df_forex = read.csv(ForexFile, skip = 6, header = F)
+colnames(df_forex)= headers
 
-if ((any(myvec-1))>9 || matrix(myvec,2,5)[2,1]<=6){
-  matrix(myvec,2,5)
-  
-}
+#convert Time Period char field to date to merge with other daily data files
+
+df_forex$period <- as.Date(df_forex$`Time Period`)
+sapply(df_forex, class)
+head(df_forex)
+
+df_forex <- df_forex[!duplicated(df_forex$period),]
+head(df_forex)
+summary(df_forex)
+
+
+
+# Read Business Sentiment Index Data File
+
+df_BSI = read.csv(BizSentimentIndexFile, header = T)
+df_BSI$period <- as.Date(df_BSI$created_date,format='%m/%d/%Y')
+
+head(df_BSI)
+sapply(df_BSI, class)
+
+# merge Exchange rate and Sentiments data
+
+xx <- merge(x=df_BSI, y=df_forex, by="period",all.x=TRUE ) 
+head(xx)
+sapply(xx, class)
+
+#at data points are matched to the daily data, remove records if curresponding records are not available
+

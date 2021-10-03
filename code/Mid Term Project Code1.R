@@ -58,20 +58,37 @@ cn <- 'GE'
 
 for (i in df_companies$ticker) {
   
-  #pick the csv file of the specific company in the list
+  #pick the csv file of every company in the input list and create a dataframe in a loop
   
-  df_c <- read.csv(paste0("./data/",i, ".csv"), header = T)
-  df_c$period <- as.Date(df_c$Date)
-  df_c$ticker <- i
-  df_companies_subset <- subset(df_companies, ticker==i)
-  print(df_companies_subset )
-  df_c <- merge(x=df_c, y=df_companies_subset, by="ticker",all.x=TRUE ) 
-  #create a new data frame for each company for later use
-  assign(paste0("df_",i), df_c)
+  df_c <- read.csv(paste0("./data/",i, ".csv"), header = T) 
+  df_c$period <- as.Date(df_c$Date) # add a date field 
+  df_c$ticker <- i # attach ticker
+  df_companies_subset <- subset(df_companies, ticker==i) 
+  df_c <- merge(x=df_c, y=df_companies_subset, by="ticker",all.x=TRUE )  # merge with companies list to get the name
   
-  plot(x= df_c$period,y= df_c$Close,    type ='p',pch=19)
+  assign(paste0("df_",i), df_c) #create a new data frame for each company for later use
   
+  empty_df = df_c[FALSE,]
+  empty_df
+  
+  if (exists("df_c_all")) {
+    df_c_all <- rbind(df_c_all, df_c)
+  
+  }else {
+    df_c_all=df_c}
   }
-head(df_c)
+  
+head(df_F)
+library(ggplot2) 
+ggplot(data = df_c_all, aes(period, Close)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue") + 
+  labs(title = "New Marvel characters by alignment",
+       subtitle = "(limited to characters with more than 100 appearances)",
+       y = "Count of new characters", x = "") + 
+#  facet_grid(name~ .) 
+  facet_wrap(~name,scales="free",ncol=2)
+
+
 
 # df3 <- rbind(df1, df2)

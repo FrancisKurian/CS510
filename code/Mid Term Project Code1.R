@@ -4,10 +4,11 @@
 # apply testing using the r functions
 
 # getwd()
+library(ggplot2) 
 library(plyr)
 library(lubridate)
-library(ggplot2) 
 library(scales)
+library(reshape2)
 
 CompanyNames <- './data/CompanyNames.csv'
 ForexFile <- './data/FederalReserve_CurrencyXchangeRate.csv'
@@ -38,7 +39,6 @@ df_forex <- df_forex[!duplicated(df_forex$period),]
 sapply(df_forex, class)
 head(df_forex)
 summary(df_forex)
-
 
 
 # merge Exchange rate and Sentiments data
@@ -92,14 +92,6 @@ for (i in df_companies$ticker) {
   
   }
 
-head(df_bsi_all)
-sapply(df_bsi_all, class)
-summary(df_bsi_all)
-count(na.omit(df_bsi_all), 'name')
-
-
-
-
 ggplot(data = df_c_all, aes(period, Close)) +
   geom_line(color = "steelblue", size = 1) +
   geom_point(color = "steelblue") + 
@@ -118,7 +110,6 @@ ggplot(data = df_c_all, aes(period, Volume)) +
   scale_y_continuous(labels = label_number(suffix = " M", scale = 1e-6))
 
 
-
 ggplot(data = na.omit(df_bsi_all), aes(period,bsi_score)) +
   geom_line(color = "steelblue", size = 1) +
   geom_point(color = "steelblue") + 
@@ -126,3 +117,38 @@ ggplot(data = na.omit(df_bsi_all), aes(period,bsi_score)) +
        subtitle = "(Visualization to check any obvious data issues)",
        y = "Daily Trading Volume", x = " Date") + 
   facet_wrap(~name,scales="free",ncol=3) 
+
+head(df_forex)
+
+ggplot(data = na.omit(df_forex), aes(period,USDxEUR)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue") + 
+  labs(title = "Time Series of Stock trading volume",
+       subtitle = "(Visualization to check any obvious data issues)",
+       y = "Daily Trading Volume", x = " Date") 
+
+
+
+df_forex2 <- melt(df_forex, id.vars="period")
+
+ggplot(na.omit(df_forex2), aes(period,value)) + 
+  geom_point() + 
+  stat_smooth() +
+  facet_wrap(~variable,scales="free",ncol=1)
+
+
+# merge stock price, sentiment index and exchange rate data sets 
+
+
+head(df_forex)
+summary(df_forex)
+
+head( df_bsi)
+summary(df_bsi)
+
+head( df_c)
+summary(df_c)
+
+
+# count(na.omit(df_bsi_all), 'name')
+

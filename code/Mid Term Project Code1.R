@@ -4,6 +4,11 @@
 # apply testing using the r functions
 
 # getwd()
+library(plyr)
+library(lubridate)
+library(ggplot2) 
+library(scales)
+
 CompanyNames <- './data/CompanyNames.csv'
 ForexFile <- './data/FederalReserve_CurrencyXchangeRate.csv'
 
@@ -34,14 +39,7 @@ sapply(df_forex, class)
 head(df_forex)
 summary(df_forex)
 
-# Read Business Sentiment Index Data File
 
-df_BSI = read.csv(BizSentimentIndexFile, header = T)
-df_BSI$period <- as.Date(df_BSI$created_date,format='%m/%d/%Y')
-
-head(df_BSI)
-sapply(df_BSI, class)
-summary(df_BSI)
 
 # merge Exchange rate and Sentiments data
 
@@ -54,10 +52,11 @@ summary(xx)
 df_companies = read.csv(CompanyNames, header = T)
 head(df_companies)
 
-cn <- 'GE'
+rm(df_c_all)
+rm(df_bsi_all)
 
 for (i in df_companies$ticker) {
-  
+  #process stock price/volume files from data directory
   #pick the csv file of every company in the input list and create a dataframe in a loop
   
   df_c <- read.csv(paste0("./data/",i, ".csv"), header = T) 
@@ -67,28 +66,63 @@ for (i in df_companies$ticker) {
   df_c <- merge(x=df_c, y=df_companies_subset, by="ticker",all.x=TRUE )  # merge with companies list to get the name
   
   assign(paste0("df_",i), df_c) #create a new data frame for each company for later use
-  
-  empty_df = df_c[FALSE,]
-  empty_df
+
+# create a data frame to append  every data frame for graphs  
   
   if (exists("df_c_all")) {
     df_c_all <- rbind(df_c_all, df_c)
   
   }else {
     df_c_all=df_c}
-  }
   
-head(df_F)
-library(ggplot2) 
+  # Process Sentiments Index from data directory
+  
+  df_bsi <- read.csv(paste0("./data/",i, "_BSI.csv"), header = T) 
+  df_bsi$period <- as.Date(parse_date_time(df_bsi$created_date, c('%Y-%m-%d', '%m/%d/%y')))
+    df_bsi$ticker <- i # attach ticker
+  df_bsi <- merge(x=df_bsi, y=df_companies_subset, by="ticker",all.x=TRUE )  # merge with companies list to get the name
+  df_bsi <- df_bsi[c('ticker','period','name','bsi_score')]
+
+  if (exists("df_bsi_all")) {
+    df_bsi_all <- rbind(df_bsi_all, df_bsi)
+    
+  }else {
+    df_bsi_all <- df_bsi}
+  
+  
+  }
+
+head(df_bsi_all)
+sapply(df_bsi_all, class)
+summary(df_bsi_all)
+count(na.omit(df_bsi_all), 'name')
+
+
+
+
 ggplot(data = df_c_all, aes(period, Close)) +
   geom_line(color = "steelblue", size = 1) +
   geom_point(color = "steelblue") + 
-  labs(title = "New Marvel characters by alignment",
-       subtitle = "(limited to characters with more than 100 appearances)",
-       y = "Count of new characters", x = "") + 
-#  facet_grid(name~ .) 
+  labs(title = "Time Series of Stock Prices by Company",
+       subtitle = "(Visualization to check any obvious data issues)",
+       y = "Stock Prices - Closing ", x = " Date") + 
   facet_wrap(~name,scales="free",ncol=2)
 
+ggplot(data = df_c_all, aes(period, Volume)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue") + 
+  labs(title = "Time Series of Stock trading volume",
+       subtitle = "(Visualization to check any obvious data issues)",
+       y = "Daily Trading Volume", x = " Date") + 
+  facet_wrap(~name,scales="free",ncol=2) +
+  scale_y_continuous(labels = label_number(suffix = " M", scale = 1e-6))
 
 
-# df3 <- rbind(df1, df2)
+
+ggplot(data = na.omit(df_bsi_all), aes(period,bsi_score)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue") + 
+  labs(title = "Time Series of Stock trading volume",
+       subtitle = "(Visualization to check any obvious data issues)",
+       y = "Daily Trading Volume", x = " Date") + 
+  facet_wrap(~name,scales="free",ncol=3) 

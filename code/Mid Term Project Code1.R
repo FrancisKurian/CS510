@@ -5,10 +5,12 @@
 
 # getwd()
 library(ggplot2) 
+library(tidyr)
 library(plyr)
 library(lubridate)
 library(scales)
 library(reshape2)
+library(summarytools)
 
 CompanyNames <- './data/CompanyNames.csv'
 ForexFile <- './data/FederalReserve_CurrencyXchangeRate.csv'
@@ -138,17 +140,33 @@ ggplot(na.omit(df_forex2), aes(period,value)) +
 
 
 # merge stock price, sentiment index and exchange rate data sets 
+# ensure daily data is clean and missing values are treated
+
+dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
+dfSummary(df_c, style = "grid", plain.ascii = TRUE)
+dfSummary(df_bsi, style = "grid", plain.ascii = TRUE)
+
+df_forex <- na.omit(df_forex)
+dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
+
+# merge all three datasets
+
+df_all <- merge(df_bsi, df_forex, by="period",all.x=TRUE )  # merge with Forex file
+
+df_all <- merge(x=df_all, y=df_c, by="period",all.x=TRUE )  # merge with stock price 
+
+df_all <- subset(df_all,select=c(period,	ticker.x,	name.x,	bsi_score,	USDxINR,	USDxEUR,	USDxYEN,	Close,	Volume))
+
+dfSummary(df_all, style = "grid", plain.ascii = TRUE)
 
 
-head(df_forex)
-summary(df_forex)
+df_all <- df_all %>%
+  rename(ticker = ticker.x,
+         CompanyName = name.x,
+         Stock.Price = Close,
+         Stock.Volume= Volume )
 
-head( df_bsi)
-summary(df_bsi)
+write.csv(df_all, "./data/company_full_merge.csv")
 
-head( df_c)
-summary(df_c)
-
-
-# count(na.omit(df_bsi_all), 'name')
+dfSummary(df_all, style = "grid", plain.ascii = TRUE)
 

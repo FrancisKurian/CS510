@@ -4,6 +4,7 @@
 # apply testing using the r functions
 
 # getwd()
+setwd("C:/Users/jeoku/OneDrive/Documents/chapman/CS510")
 library(ggplot2) 
 library(tidyr)
 library(plyr)
@@ -11,6 +12,8 @@ library(lubridate)
 library(scales)
 library(reshape2)
 library(summarytools)
+library(ggfortify) #autoplot
+library(sjPlot) #tabmodel
 
 CompanyNames <- './data/CompanyNames.csv'
 ForexFile <- './data/FederalReserve_CurrencyXchangeRate.csv'
@@ -169,4 +172,28 @@ df_all <- df_all %>%
 write.csv(df_all, "./data/company_full_merge.csv")
 
 dfSummary(df_all, style = "grid", plain.ascii = TRUE)
+
+
+# install.packages("sjPlot")
+
+
+
+multi.fit = lm(Stock.Price~USDxEUR, data=df_all)
+summary(multi.fit)
+
+ggplot(df_all, aes(x=bsi_score, y=Stock.Price)) + 
+  geom_point()+
+  geom_smooth(formula = y ~ x,method=lm)
+
+tab_model(multi.fit)
+autoplot(multi.fit)
+
+
+# https://data.library.virginia.edu/diagnostic-plots/
+
+
+
+
+
+
 

@@ -32,9 +32,9 @@ df_forex$period <- as.Date(df_forex$`Time Period`)
 
 # convert char fields into numbers
 
-df_forex$USDxINR <- as.numeric(df_forex$RXI_N.B.IN)
-df_forex$USDxEUR <- as.numeric(df_forex$`RXI$US_N.B.EU`)
-df_forex$USDxYEN <- as.numeric(df_forex$RXI_N.B.JA)
+df_forex$USDxINR <- as.numeric(gsub("ND","",df_forex$RXI_N.B.IN))
+df_forex$USDxEUR <- as.numeric(gsub("ND","",df_forex$`RXI$US_N.B.EU`))
+df_forex$USDxYEN <- as.numeric(gsub("ND","",df_forex$RXI_N.B.JA))
 
 df_forex <- subset(df_forex,select = c(period, USDxINR, USDxEUR, USDxYEN))
 
@@ -46,19 +46,12 @@ head(df_forex)
 summary(df_forex)
 
 
-# merge Exchange rate and Sentiments data
-
-xx <- merge(x=df_BSI, y=df_forex, by="period",all.x=TRUE ) 
-head(xx)
-sapply(xx, class)
-summary(xx)
-
 #process company level data and plot series to figure out any data issues
 df_companies = read.csv(CompanyNames, header = T)
 head(df_companies)
 
-rm(df_c_all)
-rm(df_bsi_all)
+#rm(df_c_all)
+#rm(df_bsi_all)
 
 for (i in df_companies$ticker) {
   #process stock price/volume files from data directory
@@ -88,6 +81,10 @@ for (i in df_companies$ticker) {
   df_bsi <- merge(x=df_bsi, y=df_companies_subset, by="ticker",all.x=TRUE )  # merge with companies list to get the name
   df_bsi <- df_bsi[c('ticker','period','name','bsi_score')]
 
+  assign(paste0("df_",i,"_BSI"), df_bsi) #create a new data frame for each company for later use
+  
+  # create a data frame to append  every data frame for graphs 
+  
   if (exists("df_bsi_all")) {
     df_bsi_all <- rbind(df_bsi_all, df_bsi)
     
@@ -123,14 +120,6 @@ ggplot(data = na.omit(df_bsi_all), aes(period,bsi_score)) +
        y = "Daily Trading Volume", x = " Date") + 
   facet_wrap(~name,scales="free",ncol=3) 
 
-head(df_forex)
-
-ggplot(data = na.omit(df_forex), aes(period,USDxEUR)) +
-  geom_line(color = "steelblue", size = 1) +
-  geom_point(color = "steelblue") + 
-  labs(title = "Time Series of Stock trading volume",
-       subtitle = "(Visualization to check any obvious data issues)",
-       y = "Daily Trading Volume", x = " Date") 
 
 
 
@@ -138,9 +127,10 @@ df_forex2 <- melt(df_forex, id.vars="period")
 
 ggplot(na.omit(df_forex2), aes(period,value)) + 
   geom_point() + 
-  stat_smooth() +
+  stat_smooth(formula = y ~ x,method=loess) +
   facet_wrap(~variable,scales="free",ncol=1)
 
+#### tobe removed##########################################################################################
 
 # merge stock price, sentiment index and exchange rate data sets 
 # ensure daily data is clean and missing values are treated
@@ -176,8 +166,6 @@ dfSummary(df_all, style = "grid", plain.ascii = TRUE)
 
 # install.packages("sjPlot")
 
-
-
 multi.fit = lm(Stock.Price~USDxEUR, data=df_all)
 summary(multi.fit)
 
@@ -188,12 +176,87 @@ ggplot(df_all, aes(x=bsi_score, y=Stock.Price)) +
 tab_model(multi.fit)
 autoplot(multi.fit)
 
+#### end tobe removed##########################################################################################
 
 # https://data.library.virginia.edu/diagnostic-plots/
 
+# write a function to call for various companies
+
+# repeat the simple regression for each companies
+# repeat it for three variables
+
+##############################Beginning of the generic function ###########################################
+
+fn.regress <- function(df_s, df_b){
+
+  # check all three datasets for data issues 
+  d1 <<- dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
+  d2 <<- dfSummary(df_s, style = "grid", plain.ascii = TRUE)
+  d3 <<- dfSummary(df_b, style = "grid", plain.ascii = TRUE)
+  
+  df_forex <- na.omit(df_forex)
+  d4 <<- dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
+  
+  
+  # merge all three datasets
+  
+  df_all <- merge(df_b, df_forex, by="period",all.x=TRUE )  # merge with Forex file
+  
+  df_all <- merge(x=df_all, y=df_s, by="period",all.x=TRUE )  # merge with stock price 
+  
+  df_all <- subset(df_all,select=c(period,	ticker.x,	name.x,	bsi_score,	USDxINR,	USDxEUR,	USDxYEN,	Close,	Volume))
+  
+  # dfSummary(df_all, style = "grid", plain.ascii = TRUE)
+  
+  df_all <- rename(df_all, c("ticker.x"="ticker", "name.x"="CompanyName","Close"="Stock.Price", "Volume"="Stock.Volume"))
+  
+  d5 <<- dfSummary(df_all, style = "grid", plain.ascii = TRUE)
+  
+  # Scatterplot the variable relationship to visualize 
+  scatter <<- ggplot(df_all, aes(x=bsi_score, y=Stock.Price)) + 
+    geom_point()+
+    geom_smooth(formula = y ~ x,method=lm)
+  
+  # Fit the simple regression model and create a summary
+  
+  multi.fit = lm(Stock.Price~USDxEUR, data=df_all)
+  
+  std_results <<- summary(multi.fit) # std model results
+  tab_results <<- tab_model(multi.fit) # tabulated results
+  residual_plot <<- autoplot(multi.fit) # residuals plot
+  
+}
+
+#rm(df_all)
+fn.regress(df_GE, df_GE_BSI)
 
 
 
+print(d1)
+print(d2)
+print(d3)
+print(d4)
+print(d5)
+print(scatter)
+print(std_results)
+print(tab_results)
+print(residual_plot)
 
 
+
+fn.regress1 <- function(df_s, df_b,varx1){
+
+  # Scatterplot the variable relationship to visualize 
+  scatter <<- ggplot(df_s, aes(x=bsi_score, y=Stock.Price)) + 
+    geom_point()+
+    geom_smooth(formula = y ~ x,method=lm)
+  
+  # Fit the simple regression model and create a summary
+  
+  multi.fit <<- lm(Stock.Price~USDxEUR, data=df_s)
+
+  
+}
+
+fn.regress1(df_GE, df_GE_BSI,bsi_score) 
 

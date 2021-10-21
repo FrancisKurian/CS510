@@ -37,5 +37,5 @@ library(ggplot2)
 
 ggplot(Orange, aes(x = age, y = circumference, color = Tree)) + 
   geom_line() + labs(x = "Age (days)", y = "Circumference (mm)", title = "Orange Tree Circumference Growth by Age") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
 

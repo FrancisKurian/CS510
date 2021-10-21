@@ -4,7 +4,7 @@
 # apply testing using the r functions
 
 # getwd()
-setwd("C:/Users/jeoku/OneDrive/Documents/chapman/CS510")
+# setwd("C:/Users/jeoku/OneDrive/Documents/chapman/CS510")
 library(ggplot2) 
 library(tidyr)
 library(plyr)
@@ -130,53 +130,7 @@ ggplot(na.omit(df_forex2), aes(period,value)) +
   stat_smooth(formula = y ~ x,method=loess) +
   facet_wrap(~variable,scales="free",ncol=1)
 
-#### tobe removed##########################################################################################
 
-# merge stock price, sentiment index and exchange rate data sets 
-# ensure daily data is clean and missing values are treated
-
-dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
-dfSummary(df_c, style = "grid", plain.ascii = TRUE)
-dfSummary(df_bsi, style = "grid", plain.ascii = TRUE)
-
-df_forex <- na.omit(df_forex)
-dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
-
-# merge all three datasets
-
-df_all <- merge(df_bsi, df_forex, by="period",all.x=TRUE )  # merge with Forex file
-
-df_all <- merge(x=df_all, y=df_c, by="period",all.x=TRUE )  # merge with stock price 
-
-df_all <- subset(df_all,select=c(period,	ticker.x,	name.x,	bsi_score,	USDxINR,	USDxEUR,	USDxYEN,	Close,	Volume))
-
-dfSummary(df_all, style = "grid", plain.ascii = TRUE)
-
-
-df_all <- df_all %>%
-  rename(ticker = ticker.x,
-         CompanyName = name.x,
-         Stock.Price = Close,
-         Stock.Volume= Volume )
-
-write.csv(df_all, "./data/company_full_merge.csv")
-
-dfSummary(df_all, style = "grid", plain.ascii = TRUE)
-
-
-# install.packages("sjPlot")
-
-multi.fit = lm(Stock.Price~USDxEUR, data=df_all)
-summary(multi.fit)
-
-ggplot(df_all, aes(x=bsi_score, y=Stock.Price)) + 
-  geom_point()+
-  geom_smooth(formula = y ~ x,method=lm)
-
-tab_model(multi.fit)
-autoplot(multi.fit)
-
-#### end tobe removed##########################################################################################
 
 # https://data.library.virginia.edu/diagnostic-plots/
 
@@ -187,9 +141,16 @@ autoplot(multi.fit)
 
 ##############################Beginning of the generic function ###########################################
 
-fn.regress <- function(df_s, df_b){
+fn.regress <- function(company,var.Y,var.X){
 
-  # check all three datasets for data issues 
+  #create local dataframes based on the company names
+  df_cname <- df_companies[df_companies[,1]  == company, ]
+  df_b  <- get(paste0("df_",company,"_BSI"))
+  df_s  <- get(paste0("df_",company))
+  
+  
+  # check all three datasets for data issues and make it global
+  
   d1 <<- dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
   d2 <<- dfSummary(df_s, style = "grid", plain.ascii = TRUE)
   d3 <<- dfSummary(df_b, style = "grid", plain.ascii = TRUE)
@@ -197,6 +158,10 @@ fn.regress <- function(df_s, df_b){
   df_forex <- na.omit(df_forex)
   d4 <<- dfSummary(df_forex, style = "grid", plain.ascii = TRUE)
   
+  # cat(df_cname[1,2])
+  # print(d1)
+  # print(d2)
+  # print(d4)
   
   # merge all three datasets
   
@@ -213,13 +178,17 @@ fn.regress <- function(df_s, df_b){
   d5 <<- dfSummary(df_all, style = "grid", plain.ascii = TRUE)
   
   # Scatterplot the variable relationship to visualize 
-  scatter <<- ggplot(df_all, aes(x=bsi_score, y=Stock.Price)) + 
+  
+  scatter <<- ggplot(df_all, aes(x=df_all[,var.X], y=df_all[,var.Y])) + 
     geom_point()+
-    geom_smooth(formula = y ~ x,method=lm)
+    geom_smooth(formula = y ~ x,method=lm)+ ggtitle(df_cname[1,2] ) +
+    xlab(var.X) + ylab(var.Y)
+  
+  print(scatter)
   
   # Fit the simple regression model and create a summary
   
-  multi.fit = lm(Stock.Price~USDxEUR, data=df_all)
+  multi.fit <- lm(Stock.Price~USDxEUR, data=df_all)
   
   std_results <<- summary(multi.fit) # std model results
   tab_results <<- tab_model(multi.fit) # tabulated results
@@ -228,8 +197,8 @@ fn.regress <- function(df_s, df_b){
 }
 
 #rm(df_all)
-fn.regress(df_GE, df_GE_BSI)
-
+fn.regress("GE", "Stock.Price","bsi_score")
+fn.regress("GE", "Stock.Price","USDxEUR")
 
 
 print(d1)
@@ -243,20 +212,4 @@ print(tab_results)
 print(residual_plot)
 
 
-
-fn.regress1 <- function(df_s, df_b,varx1){
-
-  # Scatterplot the variable relationship to visualize 
-  scatter <<- ggplot(df_s, aes(x=bsi_score, y=Stock.Price)) + 
-    geom_point()+
-    geom_smooth(formula = y ~ x,method=lm)
-  
-  # Fit the simple regression model and create a summary
-  
-  multi.fit <<- lm(Stock.Price~USDxEUR, data=df_s)
-
-  
-}
-
-fn.regress1(df_GE, df_GE_BSI,bsi_score) 
 
